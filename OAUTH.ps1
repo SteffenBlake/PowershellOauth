@@ -2,60 +2,97 @@
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Runtime
 
-<# Example here is for the Google v2 OAuth #>
-$oAuthBaseUrl = "https://accounts.google.com/o/oauth2/v2/auth"
-$client_id = "<YOUR CLIENT ID HERE, REMEMBER TO NEVER SHARE THIS PUBLICLY>"
+$appSettings = Get-Content "AppSettings.json" | ConvertFrom-Json
 
-<# The return URL + Port we will listen on #>
-$redirect_uri = "http://localhost:8080/"
+if (-Not (Test-Path $appSettings.Secrets)) {
+    $secretsDir = $appSettings.Secrets | split-path -Parent
+    $secretsFile = $appSettings.Secrets | split-path -Leaf
+    <# Check if parent directory exists first before making our secrets file #>
+    if (-Not (Test-Path $secretsDir)) { 
+        New-Item -Path $secretsDir -ItemType "directory"
+    }
 
-<# Feel free to customize your html response here #>
-<# TODO: Support a simple HTML file you can edit and then serialize here #>
-$webPageResponse = "<html><body>You can now close this page!</body></html>"
+    <# Create our template secrets file #>
+    New-Item -Path $secretsDir -Name $secretsFile -ItemType "file" -Value (@{client_id = ""; client_secret=""; } | ConvertTo-Json)
 
-<# Encode and calc the length for use later #>
-$webPageResponseEncoded =  [System.Text.Encoding]::UTF8.GetBytes($webPageResponse)
-$webPageResponseLength = $webPageResponseEncoded.Length
+    "No Secrets file found, automatically created a new one at the path. Please fill out it with proper info before proceeding!"
+    Start $appSettings.Secrets
+    exit 1
+}
 
-<# Start up our lightweight HTTP Listener for the OAuth Response #>
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add($redirect_uri)
-$listener.Start()
+$secrets = Get-Content $appSettings.Secrets | ConvertFrom-Json
+$client_id = $secrets.client_id.Trim();
+$client_secret = $secrets.client_secret.Trim();
 
-<# Build our OAuth Query string #>
-$uri = New-Object System.UriBuilder -ArgumentList $oAuthBaseUrl
-$query = [System.Web.HttpUtility]::ParseQueryString($uri.Query)
+if ([string]::IsNullOrEmpty($client_id) -or [string]::IsNullOrEmpty($client_secret)) {
+    "Secret values need to be filled out before running, please double check your Client Id and your Client Secret"
+    Start $appSettings.Secrets
+    exit 1
+}
 
-$query["client_id"] = $client_id
-$query["redirect_uri"] = $redirect_uri
+$code = ""
 
-<# Customize values here for your OAuth of choice, in this case these are Google OAuth values #>
-$query["response_type"] = "code"
-$query["scope"] = "profile email"
-$query["prompt"] = "select_account"
+<# Check if we have the OAuth Code saved already, if not, fetch it#>
+if (Test-Path $appSettings.Code) {
+    $code = Get-Content $appSettings.Code
 
-$uri.Query = $query.ToString()
+} else {
+    $webPageResponse = Get-Content $appSettings.Listener.LandingPage
 
-<# Open up the browser for the User to OAuth in #>
-Start $uri.Uri
+    <# Encode and calc the length for use later #>
+    $webPageResponseEncoded =  [System.Text.Encoding]::UTF8.GetBytes($webPageResponse)
+    $webPageResponseLength = $webPageResponseEncoded.Length
 
-<# Waits for a response from the OAuth website#>
-$context = $listener.getContext()
+    <# Start up our lightweight HTTP Listener for the OAuth Response #>
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add($appSettings.Listener.RedirectURL)
+    $listener.Start()
 
-<# You can fetch any other necessary response values here #>
-$code = $context.Request.QueryString["code"]
+    <# Build our OAuth Query string #>
+    $uri = New-Object System.UriBuilder -ArgumentList $appSettings.OAuth.BaseUrl
+    $query = [System.Web.HttpUtility]::ParseQueryString($uri.Query)
 
-<# Write out our landing page for the user #>
-$response = $context.response
-$response.ContentLength64 = $webPageResponseLength
-$response.OutputStream.Write($webPageResponseEncoded, 0, $webPageResponseLength)
-$response.OutputStream.Close()
+    $query["client_id"] = $client_id
+    $query["redirect_uri"] = $appSettings.Listener.RedirectURL
 
-<# Close the HTTP Listener #>
-$listener.Stop()
+    <# Customize values here for your OAuth of choice, in this case these are Google OAuth values #>
+    $query["response_type"] = "code"
+    $query["scope"] = "profile email"
+    $query["prompt"] = "select_account"
 
+    $uri.Query = $query.ToString()
+
+    <# Open up the browser for the User to OAuth in #>
+    Start $uri.Uri
+
+    <# Waits for a response from the OAuth website#>
+    $context = $listener.getContext()
+
+    <# You can fetch any other necessary response values here #>
+    $code = $context.Request.QueryString["code"]
+
+    <# Write out our landing page for the user #>
+    $response = $context.response
+    $response.ContentLength64 = $webPageResponseLength
+    $response.ContentType = "text/html; charset=UTF-8"
+    $response.OutputStream.Write($webPageResponseEncoded, 0, $webPageResponseLength)
+    $response.OutputStream.Close()
+
+    <# Close the HTTP Listener #>
+    $listener.Stop()
+
+    $codeDir = $appSettings.Code | split-path -Parent
+    $codeFile = $appSettings.Code | split-path -Leaf
+    <# Check if parent directory exists first before making our secrets file #>
+    if (-Not (Test-Path $codeDir)) { 
+        New-Item -Path $codeDir -ItemType "directory"
+    }
+
+    <# Create our code file and cache the code for future runs#>
+    New-Item -Path $codeDir -Name $codeFile -ItemType "file" -Value $code
+}
 
 <# And viola! We now have our OAuth code for use on the API of choice #>
 $code
 
-<# YOUR CODE HERE #>
+<# YOUR SCRIPT HERE #>
