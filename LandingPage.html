@@ -1,33 +1,75 @@
+<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-</head>
-<body>
-    <div id="container" class="container">
-        <div>
-            <h1 class="header">Thanks!</h1>
-            <h2 class="header">It's now safe to close this window!</h2>
+        <title>Login successful</title>
+
+        <!-- Styles -->
+        <style>
+            html, body {
+                background-color: #fff;
+                color: #636b6f;
+                font-family: sans-serif;
+                font-weight: 100;
+                height: 100vh;
+                margin: 0;
+            }
+
+            .nearly-full-height {
+                height: 95vh;
+            }
+
+            .flex-center {
+                align-items: center;
+                display: flex;
+                justify-content: center;
+            }
+
+            .position-ref {
+                position: relative;
+            }
+
+            .main {
+                border-right: 2px solid;
+                font-size: 32px;
+                padding: 0 15px 0 15px;
+                text-align: center;
+            }
+
+            .message {
+                font-size: 18px;
+                text-align: center;
+            }
+        </style>
+    </head>
+	<body>
+		<div class="flex-center position-ref nearly-full-height">
+			<div class="main">
+				Thank you!
+			</div>
+			<div class="message" style="padding: 10px;">
+				It's now safe to close the window.
+            </div>
         </div>
-    </div>
-</body>
+        <div class="flex-center position-ref">
+            <div class="message" id="countdown">
+                Window will close in 5 seconds.
+            </div>
+        </div>
+        <script>
+            var timeleft = 4;
+            var closeTimer = setInterval(function(){
+                if(timeleft <= 0){
+                    clearInterval(closeTimer);
+                    document.getElementById("countdown").innerHTML = "Closing now.";
+                    window.close();
+                } else {
+                    document.getElementById("countdown").innerHTML = "Window will close in " + timeleft + " second" + ((timeleft == 1) ? ".":"s.");
+                }
+                timeleft -= 1;
+            }, 1000);
+        </script>
+	</body>
 </html>
-
-<style>
-    body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-image: linear-gradient(141deg, #b7d7e8 0%,#4783a1 48%, #4783a1 52%, #afd8eb  100%);
-    }
-
-    .header {
-        font-family: Verdana, Geneva, Tahoma, sans-serif;
-        color: antiquewhite;
-        text-align: center;
-        font-weight: bolder;
-    }
-</style>

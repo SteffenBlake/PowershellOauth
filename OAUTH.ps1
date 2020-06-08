@@ -16,7 +16,7 @@ if (-Not (Test-Path $appSettings.Secrets)) {
     New-Item -Path $secretsDir -Name $secretsFile -ItemType "file" -Value (@{client_id = ""; client_secret=""; } | ConvertTo-Json)
 
     "No Secrets file found, automatically created a new one at the path. Please fill out it with proper info before proceeding!"
-    Start $appSettings.Secrets
+    Start-Process $appSettings.Secrets
     exit 1
 }
 
@@ -26,16 +26,16 @@ $client_secret = $secrets.client_secret.Trim();
 
 if ([string]::IsNullOrEmpty($client_id) -or [string]::IsNullOrEmpty($client_secret)) {
     "Secret values need to be filled out before running, please double check your Client Id and your Client Secret"
-    Start $appSettings.Secrets
+    Start-Process $appSettings.Secrets
     exit 1
 }
 
 $code = ""
 
-<# Check if we have the OAuth Code saved already, if not, fetch it#>
-if (Test-Path $appSettings.Code) {
+<#  Check if we have the OAuth Code saved already, if not, fetch it
+    If $appSettings.Code is empty, the OAuth Code will be requested every time #>
+if (($appSettings.Code -Ne "") -And (Test-Path $appSettings.Code)) {
     $code = Get-Content $appSettings.Code
-
 } else {
     $webPageResponse = Get-Content $appSettings.Listener.LandingPage
 
@@ -63,7 +63,7 @@ if (Test-Path $appSettings.Code) {
     $uri.Query = $query.ToString()
 
     <# Open up the browser for the User to OAuth in #>
-    Start $uri.Uri
+    Start-Process $uri.Uri
 
     <# Waits for a response from the OAuth website#>
     $context = $listener.getContext()
@@ -81,15 +81,17 @@ if (Test-Path $appSettings.Code) {
     <# Close the HTTP Listener #>
     $listener.Stop()
 
-    $codeDir = $appSettings.Code | split-path -Parent
-    $codeFile = $appSettings.Code | split-path -Leaf
-    <# Check if parent directory exists first before making our secrets file #>
-    if (-Not (Test-Path $codeDir)) { 
-        New-Item -Path $codeDir -ItemType "directory"
-    }
+    if ($appSettings.Code -Ne "") {
+        $codeDir = $appSettings.Code | split-path -Parent
+        $codeFile = $appSettings.Code | split-path -Leaf
+        <# Check if parent directory exists first before making our secrets file #>
+        if (-Not (Test-Path $codeDir)) { 
+            New-Item -Path $codeDir -ItemType "directory"
+        }
 
-    <# Create our code file and cache the code for future runs#>
-    New-Item -Path $codeDir -Name $codeFile -ItemType "file" -Value $code
+        <# Create our code file and cache the code for future runs#>
+        New-Item -Path $codeDir -Name $codeFile -ItemType "file" -Value $code
+    }
 }
 
 <# And viola! We now have our OAuth code for use on the API of choice #>
