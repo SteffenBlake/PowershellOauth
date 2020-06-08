@@ -8,13 +8,13 @@ Full script can be found [here](https://github.com/SteffenBlake/PowershellOauth/
 * Doesnt require downloading or installing any third party tools or extra libraries, runs completely standalone purely off Powershell
 * Configuration performed via a secondary AppSettings.json file, easy to configure!
 * Secrets are stored in a seperate Secrets.json file, so you are less likely to accidently commit secrets to github!
-* Caches the OAuth code so it wont open a browser every single time you run it!
+* Optional caching of the OAuth code so it wont open a browser every single time you run it! (See AppSettings.json for details)
 * Customizable html landing page!
 
 ## Support Checklist:
-- [x] ~~Add support to Auto-Close browser after 5 seconds~~  (Not supported by browsers anymore!)
+- [x] Add support to Auto-Close browser after 5 seconds  [Thanks fellwell5!](https://github.com/fellwell5)
 - [x] Add support for a customizable simple .html file for the landing page
-- [x] Add support for caching the OAuth Code
+- [x] Add support for optionally caching the OAuth Code
 - [x] Move configuration to a json file
 - [x] Support loading a Secrets.json file
 - [ ] More to come? (Open to suggestions!)
