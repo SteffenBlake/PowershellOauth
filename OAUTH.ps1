@@ -55,10 +55,10 @@ if (($appSettings.Code -Ne "") -And (Test-Path $appSettings.Code)) {
     $query["client_id"] = $client_id
     $query["redirect_uri"] = $appSettings.Listener.RedirectURL
 
-    <# Customize values here for your OAuth of choice, in this case these are Google OAuth values #>
-    $query["response_type"] = "code"
-    $query["scope"] = "profile email"
-    $query["prompt"] = "select_account"
+    <# Customize values here for your OAuth of choice #>
+    foreach ($additionalValue in $appSettings.OauthValues.PSObject.Properties){
+        $query[$additionalValue.Name] = $additionalValue.Value
+    }
 
     $uri.Query = $query.ToString()
 
